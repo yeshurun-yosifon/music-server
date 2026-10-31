@@ -37,6 +37,17 @@ def clean(t):
     return ' '.join(''.join(keep).split())
 
 
+def clean_any(t):
+    # לשמיעת התמלול: משאיר אותיות (עברית ואנגלית), ספרות ורווחים
+    keep = []
+    for ch in t:
+        if ch.isalnum() or ch == ' ':
+            keep.append(ch)
+        else:
+            keep.append(' ')
+    return ' '.join(''.join(keep).split())
+
+
 def ym(text):
     return Response(text, mimetype='text/plain; charset=utf-8')
 
@@ -75,6 +86,8 @@ def ivr():
     q = args.get('search')
     choice = args.get('choice')
 
+    print('SEARCH RECEIVED:', repr(q), flush=True)
+
     # שלב 1: בקשת הקלטה ותמלול
     if not q:
         return ym(
@@ -91,7 +104,7 @@ def ivr():
     results = CACHE[call_id]
 
     if not choice or choice == '6':
-        text = ''
+        text = f'החיפוש שלכם הוא {clean_any(q)} '
         for i, r in enumerate(results, 1):
             name = clean(r['title']) or 'שיר ללא שם בעברית'
             text += f'{name} להשמעה הקישו {NUMS[i]} '
