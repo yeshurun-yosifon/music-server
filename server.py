@@ -8,6 +8,8 @@ app.json.ensure_ascii = False
 BASE = 'https://music-server-lf9r.onrender.com'
 CACHE = {}
 
+NUMS = {1: 'אחת', 2: 'שתיים', 3: 'שלוש', 4: 'ארבע', 5: 'חמש', 6: 'שש'}
+
 
 @app.route('/')
 def home():
@@ -25,10 +27,10 @@ def do_search(q):
 
 
 def clean(t):
-    # ימות המשיח לא אוהבת תווים מיוחדים בהקראה
+    # משאיר רק אותיות עבריות ורווחים, כדי שההקראה תהיה בעברית
     keep = []
     for ch in t:
-        if ch.isalnum() or ch == ' ':
+        if '\u05d0' <= ch <= '\u05ea' or ch == ' ':
             keep.append(ch)
         else:
             keep.append(' ')
@@ -73,7 +75,7 @@ def ivr():
     q = args.get('search')
     choice = args.get('choice')
 
-    # שלב 1: ביקוש הקלטה ותמלול
+    # שלב 1: בקשת הקלטה ותמלול
     if not q:
         return ym(
             'read=t-אנא אמרו את החיפוש שלכם ובסיום הקישו סולמית'
@@ -91,14 +93,15 @@ def ivr():
     if not choice or choice == '6':
         text = ''
         for i, r in enumerate(results, 1):
-            text += f'{clean(r["title"])} להשמעה הקישו {i} '
-        text += 'לשמיעה חוזרת הקישו 6'
+            name = clean(r['title']) or 'שיר ללא שם בעברית'
+            text += f'{name} להשמעה הקישו {NUMS[i]} '
+        text += f'לשמיעה חוזרת הקישו {NUMS[6]}'
         return ym(f'read=t-{text}=choice,no,number,1,1,7,Number,no,no')
 
     # שלב 3: השמעה (בינתיים רק הודעה, ההשמעה האמיתית אחר כך)
     try:
         idx = int(choice) - 1
-        title = clean(results[idx]['title'])
+        title = clean(results[idx]['title']) or 'השיר שבחרתם'
     except Exception:
         return ym('id_list_message=t-בחירה לא תקינה')
     return ym(f'id_list_message=t-בחרתם {title}')
